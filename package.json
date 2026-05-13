@@ -1,0 +1,33 @@
+{
+  "name": "userscripts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Personal collection of Tampermonkey user scripts, organized by product.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lennondotw/userscripts.git"
+  },
+  "type": "module",
+  "scripts": {
+    "prepare": "husky",
+    "typecheck": "tsc --noEmit",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "check": "pnpm format:check && pnpm typecheck",
+    "stamp-versions": "node scripts/stamp-versions.mjs"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "@types/node": "^22.10.0",
+    "@types/tampermonkey": "^5.0.5",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "oxfmt": "^0.49.0",
+    "typescript": "^5.7.2"
+  },
+  "lint-staged": {
+    "*.{js,mjs,ts,tsx,json,md,yml,yaml}": "oxfmt --write"
+  },
+  "packageManager": "pnpm@10.33.0"
+}
