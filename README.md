@@ -36,18 +36,25 @@ and republishes when the timestamp advances.
 
 `.github/workflows/release.yml` runs on every push to `main`:
 
-1. Looks at the diff between `before` and `after` SHAs.
-2. For each `*.user.js` that changed, rewrites the `@version` line to
+1. Mints a short-lived installation token for the `lennondotw-userscripts-bot`
+   GitHub App via [`actions/create-github-app-token`][app-token-action].
+2. Looks at the diff between `before` and `after` SHAs.
+3. For each `*.user.js` that changed, rewrites the `@version` line to
    `YYYY.MM.DD.HHmm` (UTC).
-3. Commits & pushes back as `github-actions[bot]`.
+4. Commits & pushes back as `<app-slug>[bot]` using the App token.
 
-The bot's push uses `GITHUB_TOKEN`, which by design **does not retrigger
-workflows**, so there's no loop. The `if:` guard on the job also skips runs
-authored by the bot as a belt-and-suspenders safety.
+The App is in the `main` ruleset's bypass list — that's why the push goes
+through despite "PR required" being enforced. Personal repos **cannot** put
+the built-in `github-actions[bot]` integration in the bypass list, so a
+user-owned App is the only way to keep strict branch protection while still
+auto-stamping. See [First-time setup](#first-time-setup) for how to create
+and install the App.
 
-Branch protection on `main` requires the bot to be in the **bypass list**
-(see the [setup section](#repo-bootstrap-once-the-repo-exists-on-github)).
-Without it, the stamp push is rejected.
+An `if:` guard on the job skips the workflow run triggered by the bot's
+own stamping commit. (Unlike `GITHUB_TOKEN`, App-token pushes do retrigger
+workflows, so the guard is load-bearing here.)
+
+[app-token-action]: https://github.com/actions/create-github-app-token
 
 Greasy Fork polls the raw `@downloadURL`; when it sees a new `@version`, it
 republishes. Tampermonkey/Violentmonkey clients check `@updateURL` on their
@@ -138,18 +145,64 @@ chore: stamp userscript versions
    stamps `@version`.
 6. (Optional) Publish to Greasy Fork following the section above.
 
-## Repo bootstrap (once the repo exists on GitHub)
+## First-time setup
 
-After `gh repo create lennondotw/userscripts --public --source=. --push`, run
-`scripts/setup-github.sh` once. It enforces the per-user policy
-(merge commits only, branch protection, `github-actions[bot]` bypass for
-the release stamping workflow).
+### 1. Create the GitHub App
+
+The release workflow needs to push back to a branch-protected `main`. The
+only actor type a personal-account repo can bypass-list for that purpose
+is a user-owned GitHub App. Walk through it once:
+
+1. Open <https://github.com/settings/apps/new>.
+2. Fill the form:
+
+   | Field                             | Value                                         |
+   | --------------------------------- | --------------------------------------------- |
+   | GitHub App name                   | `lennondotw-userscripts-bot`                  |
+   | Description                       | `Auto-stamps @version on userscripts release` |
+   | Homepage URL                      | `https://github.com/lennondotw/userscripts`   |
+   | Identifying and authorizing users | (leave empty)                                 |
+   | Post installation                 | (leave empty)                                 |
+   | Webhook → Active                  | **unchecked**                                 |
+   | Repository permissions → Contents | **Read and write**                            |
+   | Repository permissions → Metadata | Read-only (default)                           |
+   | Organization permissions          | all No access                                 |
+   | Account permissions               | all No access                                 |
+   | Subscribe to events               | none                                          |
+   | Where can this be installed?      | **Only on this account**                      |
+
+3. **Create GitHub App**.
+4. On the App's settings page, copy the **App ID** (numeric).
+5. Scroll to **Private keys** → **Generate a private key** → a `.pem` file
+   downloads to your `~/Downloads`.
+6. Left sidebar → **Install App** → **Install** → **Only select
+   repositories** → tick `userscripts` → **Install**.
+
+### 2. Put the credentials into the repo
+
+```bash
+gh variable set STAMP_BOT_APP_ID -R lennondotw/userscripts -b '<app-id>'
+gh secret  set STAMP_BOT_PRIVATE_KEY -R lennondotw/userscripts \
+  < ~/Downloads/lennondotw-userscripts-bot.*.private-key.pem
+```
+
+App ID is a non-secret variable, the private key is a secret.
+
+### 3. Apply branch protection + merge policy
+
+`scripts/setup-github.sh` is idempotent — safe to re-run if a setting drifts.
 
 ```bash
 bash scripts/setup-github.sh
 ```
 
-Idempotent — safe to re-run if a setting drifted.
+It reads `STAMP_BOT_APP_ID` from either the env or the Actions variable you
+just set, then:
+
+- Sets the repo's merge strategy to merge-commits only.
+- Creates the `main-protection` ruleset (PR required, CI required, no
+  force-push, no deletion).
+- Adds the App as an `Integration` bypass actor on that ruleset.
 
 ## License
 
