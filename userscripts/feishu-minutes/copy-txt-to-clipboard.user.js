@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Feishu Minutes: Copy TXT to Clipboard
 // @namespace    https://github.com/lennondotw/userscripts
-// @version      1.0.0
+// @version      2026.05.13.1032
 // @description  Adds a "Copy TXT to clipboard" item to the Minutes transcript menu, right under 导出文字记录. Calls /minutes/api/export with format=2 and copies the TXT response.
 // @author       reeky
 // @match        https://*.feishu.cn/minutes/*
