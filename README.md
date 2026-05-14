@@ -185,13 +185,21 @@ personal repo that needs the same automation.
 ### 2. Put the credentials into the repo
 
 ```bash
-gh variable set BOT_APP_ID     -R lennondotw/userscripts -b '<app-id>'
+# Client ID is what the workflow uses to mint installation tokens
+# (GitHub recommends `client-id` over `app-id` for new setups).
+gh variable set BOT_CLIENT_ID -R lennondotw/userscripts -b 'Iv23...'
+
+# Private key is sensitive — paste the entire .pem including
+# -----BEGIN/END----- markers.
 gh secret   set BOT_PRIVATE_KEY -R lennondotw/userscripts \
   < ~/Downloads/code-pip.*.private-key.pem
 ```
 
-App ID is a non-secret variable, the private key is a secret. Both values
-are the **same across every repo** that uses Code Pip.
+The values are the **same across every repo** that uses Code Pip.
+
+The numeric App ID is only needed for the ruleset bypass call, and is
+hardcoded as `CODE_PIP_APP_ID` in `scripts/setup-github.sh` (it's a public
+identifier, not a secret).
 
 ### 3. Apply branch protection + merge policy
 
@@ -201,13 +209,13 @@ are the **same across every repo** that uses Code Pip.
 bash scripts/setup-github.sh
 ```
 
-It reads `BOT_APP_ID` from either the env or the Actions variable you just
-set, then:
+It:
 
 - Sets the repo's merge strategy to merge-commits only.
 - Creates the `main-protection` ruleset (PR required, CI required, no
   force-push, no deletion).
-- Adds Code Pip as an `Integration` bypass actor on that ruleset.
+- Adds Code Pip as an `Integration` bypass actor on that ruleset (using
+  the numeric App ID embedded in the script).
 
 ### Reusing Code Pip on another repo
 
@@ -216,11 +224,12 @@ Code Pip automation):
 
 1. **Install** the existing App on the new repo (App settings →
    Install App → Configure → tick the new repo).
-2. **Copy** `BOT_APP_ID` (variable) and `BOT_PRIVATE_KEY` (secret) into
-   the new repo, same values as above.
+2. **Copy** `BOT_CLIENT_ID` (variable) and `BOT_PRIVATE_KEY` (secret) into
+   the new repo, same values as in `userscripts`.
 3. **Run** an equivalent of `setup-github.sh` for that repo — typically
    you'll fork this one and bump the `OWNER` / `REPO` / `CI_CHECK_CONTEXT`
-   constants. The Integration bypass works the same.
+   constants. `CODE_PIP_APP_ID` stays the same. The Integration bypass
+   works the same.
 
 ## License
 

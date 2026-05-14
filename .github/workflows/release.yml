@@ -13,8 +13,12 @@ name: Release
 #
 # Setup is documented in README.md → "First-time setup". The two repo-level
 # values needed (same values across every repo using the same App):
-#   - vars.BOT_APP_ID         (numeric App ID, not secret)
+#   - vars.BOT_CLIENT_ID      (App Client ID, e.g. `Iv23...`; not secret)
 #   - secrets.BOT_PRIVATE_KEY (App's .pem private key)
+#
+# GitHub recommends `client-id` over the numeric `app-id` for installation
+# token minting. The numeric App ID is still needed for the ruleset bypass
+# config (see setup-github.sh) since that API expects a numeric actor_id.
 
 on:
   push:
@@ -40,7 +44,7 @@ jobs:
         uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          app-id: ${{ vars.BOT_APP_ID }}
+          client-id: ${{ vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
 

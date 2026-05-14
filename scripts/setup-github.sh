@@ -10,12 +10,12 @@
 #     so `.github/workflows/release.yml` can stamp @version back to main.
 #     The same App is reused across every personal repo with this automation.
 #
-# The App ID is read from one of (in order):
-#   - $BOT_APP_ID env var
-#   - `gh variable get BOT_APP_ID` (repo-level Actions variable)
-#
-# If neither is set the script aborts before touching the ruleset, since
-# the release workflow needs the bypass to function.
+# The numeric App ID is required by the ruleset bypass API (actor_type
+# `Integration` takes a numeric actor_id, not the App's client-id). It's
+# hardcoded below because (a) it's a public identifier, not a secret, and
+# (b) Code Pip is account-wide and won't change. Override with
+# `BOT_APP_ID=<n> bash scripts/setup-github.sh` if you ever fork to a
+# different App.
 #
 # Idempotent: PATCH always overwrites; the ruleset is recreated if a
 # matching one already exists.
@@ -28,25 +28,15 @@ DEFAULT_BRANCH='main'
 RULESET_NAME='main-protection'
 # Required status check context — must match the job name in ci.yml.
 CI_CHECK_CONTEXT='check'
+# Code Pip's numeric App ID. Override via env if needed.
+CODE_PIP_APP_ID=3708908
 
-echo "==> Resolving BOT_APP_ID"
-APP_ID="${BOT_APP_ID:-}"
-if [[ -z "${APP_ID}" ]]; then
-  APP_ID="$(gh variable get BOT_APP_ID -R "${OWNER}/${REPO}" 2>/dev/null || true)"
-fi
-if [[ -z "${APP_ID}" ]] || ! [[ "${APP_ID}" =~ ^[0-9]+$ ]]; then
-  cat >&2 <<EOF
-error: BOT_APP_ID is missing or not numeric.
-
-Set it as either:
-  export BOT_APP_ID=<numeric-id>
-  gh variable set BOT_APP_ID -R ${OWNER}/${REPO} -b '<numeric-id>'
-
-See README.md → "First-time setup" for the GitHub App creation steps.
-EOF
+APP_ID="${BOT_APP_ID:-${CODE_PIP_APP_ID}}"
+if ! [[ "${APP_ID}" =~ ^[0-9]+$ ]]; then
+  echo "error: BOT_APP_ID '${APP_ID}' is not numeric." >&2
   exit 1
 fi
-echo "    using App ID ${APP_ID}"
+echo "==> Using App ID ${APP_ID}"
 
 echo "==> Configuring repo merge strategy"
 gh api -X PATCH "/repos/${OWNER}/${REPO}" \
