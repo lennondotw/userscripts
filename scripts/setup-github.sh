@@ -14,8 +14,8 @@
 # `Integration` takes a numeric actor_id, not the App's client-id). It's
 # hardcoded below because (a) it's a public identifier, not a secret, and
 # (b) Code Pip is account-wide and won't change. Override with
-# `BOT_APP_ID=<n> bash scripts/setup-github.sh` if you ever fork to a
-# different App.
+# `CODE_PIP_BOT_APP_ID=<n> bash scripts/setup-github.sh` if you ever fork
+# to a different App.
 #
 # Idempotent: PATCH always overwrites; the ruleset is recreated if a
 # matching one already exists.
@@ -31,9 +31,9 @@ CI_CHECK_CONTEXT='check'
 # Code Pip's numeric App ID. Override via env if needed.
 CODE_PIP_APP_ID=3708908
 
-APP_ID="${BOT_APP_ID:-${CODE_PIP_APP_ID}}"
+APP_ID="${CODE_PIP_BOT_APP_ID:-${CODE_PIP_APP_ID}}"
 if ! [[ "${APP_ID}" =~ ^[0-9]+$ ]]; then
-  echo "error: BOT_APP_ID '${APP_ID}' is not numeric." >&2
+  echo "error: CODE_PIP_BOT_APP_ID '${APP_ID}' is not numeric." >&2
   exit 1
 fi
 echo "==> Using App ID ${APP_ID}"

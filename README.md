@@ -187,11 +187,11 @@ personal repo that needs the same automation.
 ```bash
 # Client ID is what the workflow uses to mint installation tokens
 # (GitHub recommends `client-id` over `app-id` for new setups).
-gh variable set BOT_CLIENT_ID -R lennondotw/userscripts -b 'Iv23...'
+gh variable set CODE_PIP_BOT_CLIENT_ID -R lennondotw/userscripts -b 'Iv23...'
 
 # Private key is sensitive — paste the entire .pem including
 # -----BEGIN/END----- markers.
-gh secret   set BOT_PRIVATE_KEY -R lennondotw/userscripts \
+gh secret   set CODE_PIP_BOT_PRIVATE_KEY -R lennondotw/userscripts \
   < ~/Downloads/code-pip.*.private-key.pem
 ```
 
@@ -224,7 +224,7 @@ Code Pip automation):
 
 1. **Install** the existing App on the new repo (App settings →
    Install App → Configure → tick the new repo).
-2. **Copy** `BOT_CLIENT_ID` (variable) and `BOT_PRIVATE_KEY` (secret) into
+2. **Copy** `CODE_PIP_BOT_CLIENT_ID` (variable) and `CODE_PIP_BOT_PRIVATE_KEY` (secret) into
    the new repo, same values as in `userscripts`.
 3. **Run** an equivalent of `setup-github.sh` for that repo — typically
    you'll fork this one and bump the `OWNER` / `REPO` / `CI_CHECK_CONTEXT`
