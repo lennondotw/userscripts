@@ -4,16 +4,17 @@ name: Release
 # Greasy Fork polls each script's Sync URL and republishes when the version
 # advances.
 #
-# Push auth: a personal GitHub App (`lennondotw-userscripts-bot`) installed
-# only on this repo. The App is in the `main` ruleset's bypass list, which
-# lets the stamping commit through without weakening branch protection. The
-# default `GITHUB_TOKEN` cannot be bypass-listed on personal repos — only a
+# Push auth: a personal GitHub App `Code Pip` (slug `code-pip`) installed on
+# this repo (and reused across every other personal repo that wants the same
+# automation). The App is in the `main` ruleset's bypass list, which lets the
+# stamping commit through without weakening branch protection. The default
+# `GITHUB_TOKEN` cannot be bypass-listed on personal repos — only a
 # user-owned App or DeployKey can.
 #
 # Setup is documented in README.md → "First-time setup". The two repo-level
-# values needed:
-#   - vars.STAMP_BOT_APP_ID         (numeric App ID, not secret)
-#   - secrets.STAMP_BOT_PRIVATE_KEY (App's .pem private key)
+# values needed (same values across every repo using the same App):
+#   - vars.BOT_APP_ID         (numeric App ID, not secret)
+#   - secrets.BOT_PRIVATE_KEY (App's .pem private key)
 
 on:
   push:
@@ -33,14 +34,14 @@ jobs:
     # Skip the workflow run that *was* the stamping commit. App-token pushes
     # do trigger downstream workflows (unlike GITHUB_TOKEN), so this guard
     # short-circuits the second run after a stamp.
-    if: "!endsWith(github.event.head_commit.author.name, '-userscripts-bot[bot]')"
+    if: github.event.head_commit.author.name != 'code-pip[bot]'
     steps:
       - name: Mint App installation token
         uses: actions/create-github-app-token@v3
         id: app-token
         with:
-          app-id: ${{ vars.STAMP_BOT_APP_ID }}
-          private-key: ${{ secrets.STAMP_BOT_PRIVATE_KEY }}
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-contents: write
 
       - uses: actions/checkout@v4

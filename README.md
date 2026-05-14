@@ -36,8 +36,8 @@ and republishes when the timestamp advances.
 
 `.github/workflows/release.yml` runs on every push to `main`:
 
-1. Mints a short-lived installation token for the `lennondotw-userscripts-bot`
-   GitHub App via [`actions/create-github-app-token`][app-token-action].
+1. Mints a short-lived installation token for the `Code Pip` GitHub App
+   (slug `code-pip`) via [`actions/create-github-app-token`][app-token-action].
 2. Looks at the diff between `before` and `after` SHAs.
 3. For each `*.user.js` that changed, rewrites the `@version` line to
    `YYYY.MM.DD.HHmm` (UTC).
@@ -147,46 +147,51 @@ chore: stamp userscript versions
 
 ## First-time setup
 
-### 1. Create the GitHub App
-
 The release workflow needs to push back to a branch-protected `main`. The
 only actor type a personal-account repo can bypass-list for that purpose
-is a user-owned GitHub App. Walk through it once:
+is a user-owned GitHub App. Create one shared App and reuse it across every
+personal repo that needs the same automation.
+
+### 1. Create the GitHub App (one time, ever)
 
 1. Open <https://github.com/settings/apps/new>.
 2. Fill the form:
 
-   | Field                             | Value                                         |
-   | --------------------------------- | --------------------------------------------- |
-   | GitHub App name                   | `lennondotw-userscripts-bot`                  |
-   | Description                       | `Auto-stamps @version on userscripts release` |
-   | Homepage URL                      | `https://github.com/lennondotw/userscripts`   |
-   | Identifying and authorizing users | (leave empty)                                 |
-   | Post installation                 | (leave empty)                                 |
-   | Webhook → Active                  | **unchecked**                                 |
-   | Repository permissions → Contents | **Read and write**                            |
-   | Repository permissions → Metadata | Read-only (default)                           |
-   | Organization permissions          | all No access                                 |
-   | Account permissions               | all No access                                 |
-   | Subscribe to events               | none                                          |
-   | Where can this be installed?      | **Only on this account**                      |
+   | Field                             | Value                                                                                     |
+   | --------------------------------- | ----------------------------------------------------------------------------------------- |
+   | GitHub App name                   | `Code Pip`                                                                                |
+   | Description                       | `Personal automation bot — version stamping, format fixes, and similar repo maintenance.` |
+   | Homepage URL                      | `https://github.com/lennondotw`                                                           |
+   | Identifying and authorizing users | (leave empty)                                                                             |
+   | Post installation                 | (leave empty)                                                                             |
+   | Webhook → Active                  | **unchecked**                                                                             |
+   | Repository permissions → Contents | **Read and write**                                                                        |
+   | Repository permissions → Metadata | Read-only (default)                                                                       |
+   | Organization permissions          | all No access                                                                             |
+   | Account permissions               | all No access                                                                             |
+   | Subscribe to events               | none                                                                                      |
+   | Where can this be installed?      | **Only on this account**                                                                  |
 
-3. **Create GitHub App**.
+3. **Create GitHub App**. Slug becomes `code-pip`; commit author will be
+   `code-pip[bot]`.
 4. On the App's settings page, copy the **App ID** (numeric).
 5. Scroll to **Private keys** → **Generate a private key** → a `.pem` file
-   downloads to your `~/Downloads`.
+   downloads to your `~/Downloads`. Keep this file — you'll reuse it for
+   every repo.
 6. Left sidebar → **Install App** → **Install** → **Only select
-   repositories** → tick `userscripts` → **Install**.
+   repositories** → tick `userscripts` (and any other repo you want to
+   automate) → **Install**.
 
 ### 2. Put the credentials into the repo
 
 ```bash
-gh variable set STAMP_BOT_APP_ID -R lennondotw/userscripts -b '<app-id>'
-gh secret  set STAMP_BOT_PRIVATE_KEY -R lennondotw/userscripts \
-  < ~/Downloads/lennondotw-userscripts-bot.*.private-key.pem
+gh variable set BOT_APP_ID     -R lennondotw/userscripts -b '<app-id>'
+gh secret   set BOT_PRIVATE_KEY -R lennondotw/userscripts \
+  < ~/Downloads/code-pip.*.private-key.pem
 ```
 
-App ID is a non-secret variable, the private key is a secret.
+App ID is a non-secret variable, the private key is a secret. Both values
+are the **same across every repo** that uses Code Pip.
 
 ### 3. Apply branch protection + merge policy
 
@@ -196,13 +201,26 @@ App ID is a non-secret variable, the private key is a secret.
 bash scripts/setup-github.sh
 ```
 
-It reads `STAMP_BOT_APP_ID` from either the env or the Actions variable you
-just set, then:
+It reads `BOT_APP_ID` from either the env or the Actions variable you just
+set, then:
 
 - Sets the repo's merge strategy to merge-commits only.
 - Creates the `main-protection` ruleset (PR required, CI required, no
   force-push, no deletion).
-- Adds the App as an `Integration` bypass actor on that ruleset.
+- Adds Code Pip as an `Integration` bypass actor on that ruleset.
+
+### Reusing Code Pip on another repo
+
+For each new repo where you want the same `@version` stamping (or other
+Code Pip automation):
+
+1. **Install** the existing App on the new repo (App settings →
+   Install App → Configure → tick the new repo).
+2. **Copy** `BOT_APP_ID` (variable) and `BOT_PRIVATE_KEY` (secret) into
+   the new repo, same values as above.
+3. **Run** an equivalent of `setup-github.sh` for that repo — typically
+   you'll fork this one and bump the `OWNER` / `REPO` / `CI_CHECK_CONTEXT`
+   constants. The Integration bypass works the same.
 
 ## License
 

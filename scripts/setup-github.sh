@@ -6,12 +6,13 @@
 #   - Merge commits only (no squash, no rebase) on PRs.
 #   - Auto-merge available, branch deleted on merge.
 #   - Ruleset on `main`: PR required, CI required, no force pushes, no deletion.
-#   - A personal GitHub App (lennondotw-userscripts-bot) bypasses the ruleset
+#   - A personal GitHub App (Code Pip, slug `code-pip`) bypasses the ruleset
 #     so `.github/workflows/release.yml` can stamp @version back to main.
+#     The same App is reused across every personal repo with this automation.
 #
 # The App ID is read from one of (in order):
-#   - $STAMP_BOT_APP_ID env var
-#   - `gh variable get STAMP_BOT_APP_ID` (repo-level Actions variable)
+#   - $BOT_APP_ID env var
+#   - `gh variable get BOT_APP_ID` (repo-level Actions variable)
 #
 # If neither is set the script aborts before touching the ruleset, since
 # the release workflow needs the bypass to function.
@@ -28,18 +29,18 @@ RULESET_NAME='main-protection'
 # Required status check context — must match the job name in ci.yml.
 CI_CHECK_CONTEXT='check'
 
-echo "==> Resolving STAMP_BOT_APP_ID"
-APP_ID="${STAMP_BOT_APP_ID:-}"
+echo "==> Resolving BOT_APP_ID"
+APP_ID="${BOT_APP_ID:-}"
 if [[ -z "${APP_ID}" ]]; then
-  APP_ID="$(gh variable get STAMP_BOT_APP_ID -R "${OWNER}/${REPO}" 2>/dev/null || true)"
+  APP_ID="$(gh variable get BOT_APP_ID -R "${OWNER}/${REPO}" 2>/dev/null || true)"
 fi
 if [[ -z "${APP_ID}" ]] || ! [[ "${APP_ID}" =~ ^[0-9]+$ ]]; then
   cat >&2 <<EOF
-error: STAMP_BOT_APP_ID is missing or not numeric.
+error: BOT_APP_ID is missing or not numeric.
 
 Set it as either:
-  export STAMP_BOT_APP_ID=<numeric-id>
-  gh variable set STAMP_BOT_APP_ID -R ${OWNER}/${REPO} -b '<numeric-id>'
+  export BOT_APP_ID=<numeric-id>
+  gh variable set BOT_APP_ID -R ${OWNER}/${REPO} -b '<numeric-id>'
 
 See README.md → "First-time setup" for the GitHub App creation steps.
 EOF
