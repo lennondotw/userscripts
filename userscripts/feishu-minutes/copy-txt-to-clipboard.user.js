@@ -22,7 +22,7 @@
 ;(function () {
   'use strict'
 
-  /** New menu item label, in English per request. */
+  /** Display label for the injected menu item. */
   const NEW_LABEL = 'Copy TXT to clipboard'
 
   /**
@@ -162,7 +162,7 @@
       await writeClipboard(text)
       toast(`Copied transcript (${text.length} chars)`)
     } catch (err) {
-      console.error('[Copy TXT]', err)
+      console.error('[Copy TXT to Clipboard]', err)
       const msg = err instanceof Error ? err.message : String(err)
       toast('Copy failed: ' + msg, true)
     }
